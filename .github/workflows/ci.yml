@@ -1,0 +1,68 @@
+name: CI
+
+# One Linux job per pull request and push to main (owner rule: Actions minutes are
+# shared with other repos). The Electron smoke test runs by hand (smoke.yml) and on
+# release tags, never here.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # A docs-only pull request still reports this check (so it can stay required),
+      # but skips installing and testing.
+      - name: What changed
+        id: changes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --name-only "$BASE" HEAD | grep -qvE '\.md$|^docs/|^LICENSE$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Only docs changed; skipping install and tests."
+          fi
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.changes.outputs.code != 'false'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.changes.outputs.code != 'false'
+        run: npm ci
+      - if: steps.changes.outputs.code != 'false'
+        run: npm run typecheck
+      - if: steps.changes.outputs.code != 'false'
+        run: npm test
+      - if: steps.changes.outputs.code != 'false'
+        run: npm run build
+      # vsce from the lockfile; vscode:prepublish rebuilds dist/ first.
+      - name: Package the .vsix
+        if: steps.changes.outputs.code != 'false'
+        run: |
+          npx vsce package --out cloudpin.vsix
+          npx vsce ls
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.changes.outputs.code != 'false'
+        with:
+          name: vsix
+          path: cloudpin.vsix
+          retention-days: 7
+          if-no-files-found: error

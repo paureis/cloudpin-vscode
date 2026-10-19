@@ -1,0 +1,37 @@
+name: Smoke
+
+# The Electron smoke test, by hand only (it downloads VS Code, about a minute):
+# a real VS Code with the built extension, a folder with a pin file, and fake
+# cloudpin scripts on PATH (scripts/smoke.mjs). release.yml runs it on tags.
+on:
+  workflow_dispatch:
+    inputs:
+      vscode:
+        description: VS Code version to test against ("stable", or e.g. "1.100.0")
+        default: stable
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Smoke test
+        env:
+          CLOUDPIN_SMOKE_VSCODE: ${{ inputs.vscode }}
+        run: xvfb-run -a npm run test:smoke
