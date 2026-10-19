@@ -18,6 +18,8 @@ let version: string;
 let found: string | null;
 let now: number;
 let platform: NodeJS.Platform;
+/** What `check --json` answers in a folder; a test can replace it to hold a check open. */
+let answer: (cwd: string) => Promise<string>;
 
 function start() {
   const checker = new Checker({
@@ -25,7 +27,7 @@ function start() {
     run: async (_file, args, cwd): Promise<RunResult> => {
       if (args[0] === "--version") return { code: 0, stdout: `${version}\n`, stderr: "", timedOut: false };
       checks.push(cwd);
-      return { code: 0, stdout: MATCH, stderr: "", timedOut: false };
+      return { code: 0, stdout: await answer(cwd), stderr: "", timedOut: false };
     },
   });
   const context = { subscriptions: [] as { dispose(): unknown }[] };
@@ -47,6 +49,7 @@ beforeEach(() => {
   found = "/usr/bin/cloudpin";
   now = 1_000_000;
   platform = "linux";
+  answer = async () => MATCH;
   workspace.workspaceFolders = [folder("/w/a", 0), folder("/w/b", 1)];
 });
 
@@ -124,6 +127,29 @@ describe("refreshes", () => {
     events.folders.fire({});
     await vi.waitFor(() => expect(checks).toHaveLength(2));
     expect(recorded.watchers.filter((w) => !w.disposed)).toHaveLength(1);
+  });
+
+  it("drops a check that finishes after the focus moved to another folder", async () => {
+    const held = new Map<string, (stdout: string) => void>();
+    answer = (cwd) => new Promise((resolve) => held.set(cwd, resolve));
+    const { api, item } = start();
+    await vi.waitFor(() => expect(held.has("/w/a")).toBe(true));
+    // The user moves to folder b while a's check is still running.
+    events.activeEditor.fire({ document: { uri: Uri.file("/w/b/y.ts") } });
+    const mismatch = JSON.stringify({
+      result: "mismatch",
+      path: "/w/a/.cloudpin.yml",
+      environment: null,
+      providers: [{ provider: "azure", status: "mismatch", problems: ["another subscription"] }],
+    });
+    held.get("/w/a")!(mismatch);
+    // b's check is running and held open: a's late result must not be on the item meanwhile.
+    await vi.waitFor(() => expect(held.has("/w/b")).toBe(true));
+    expect(api.state()).toBeUndefined();
+    expect(item.visible).toBe(false);
+    held.get("/w/b")!(MATCH);
+    await vi.waitFor(() => expect(api.state()).toBe("match"));
+    expect(checks).toEqual(["/w/a", "/w/b"]);
   });
 });
 

@@ -97,12 +97,18 @@ export function activateWith(context: vscode.ExtensionContext, host: Host): Api 
       item.hide();
       return;
     }
-    checkedFolder = folder.uri.fsPath;
+    const checked = folder.uri.fsPath;
+    checkedFolder = checked;
+    let view: View;
     try {
-      render(await host.checker.check({ trusted: vscode.workspace.isTrusted, folder: folder.uri.fsPath }));
+      view = await host.checker.check({ trusted: vscode.workspace.isTrusted, folder: checked });
     } catch (err) {
-      render(failedView(err instanceof Error ? err.message : String(err)));
+      view = failedView(err instanceof Error ? err.message : String(err));
     }
+    // The focus moved to another folder while this check ran: whatever moved it
+    // asked for a refresh, which runs next, so this result is for the wrong folder.
+    if (focusFolder()?.uri.fsPath !== checked) return;
+    render(view);
   }, host.now);
   context.subscriptions.push({ dispose: () => scheduler.dispose() });
   const refresh = () => void scheduler.request();
