@@ -60,7 +60,7 @@ export interface FakeItem {
 }
 
 export interface FakeTerminal {
-  options: { name: string; cwd: FakeUri; isTransient: boolean };
+  options: { name: string; cwd: FakeUri; isTransient: boolean; env?: Record<string, string | undefined> };
   sent: string[];
   shown: boolean;
   show(): void;

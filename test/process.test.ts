@@ -81,6 +81,34 @@ describe("with a real process", () => {
     expect(out.cwd.toLowerCase()).toBe(workspace.toLowerCase());
   });
 
+  // npm's cloudpin.cmd runs a bare `node` when no node.exe sits beside it, and
+  // cmd.exe looks for a bare name in the current folder (the workspace) before
+  // PATH unless NoDefaultCurrentDirectoryInExePath is set (GHSA-3cf7-5v5w-q5vr).
+  it.runIf(process.platform === "win32")("an npm-style shim's bare command comes from PATH, not the workspace", async () => {
+    const helper = "cloudpin-vscode-helper";
+    const shimDir = join(root, "shim");
+    const helperDir = join(root, "helper");
+    const repo = join(root, "shim repo");
+    for (const dir of [shimDir, helperDir, repo]) mkdirSync(dir, { recursive: true });
+    // The shape of npm's cmd-shim: the program name goes through a variable and runs unqualified.
+    writeFileSync(
+      join(shimDir, "cloudpin.cmd"),
+      ["@ECHO off", "SETLOCAL", `SET "_prog=${helper}"`, `endLocal & "%_prog%" %*`, ""].join("\r\n"),
+    );
+    writeFileSync(join(helperDir, `${helper}.cmd`), "@echo from-path\r\n");
+    writeFileSync(join(repo, `${helper}.cmd`), "@echo planted\r\n");
+
+    const shimEnv: NodeJS.ProcessEnv = { ...process.env };
+    // Deleted in every casing: a machine that sets it globally would hide the bug.
+    for (const k of Object.keys(shimEnv)) {
+      if (k.toUpperCase() === "PATH" || k.toUpperCase() === "NODEFAULTCURRENTDIRECTORYINEXEPATH") delete shimEnv[k];
+    }
+    shimEnv.PATH = [helperDir, process.env.PATH ?? ""].join(delimiter);
+
+    const result = await runFile(join(shimDir, "cloudpin.cmd"), [], { cwd: repo, env: shimEnv, timeoutMs: TIMEOUT_MS });
+    expect(result.stdout.trim()).toBe("from-path");
+  });
+
   it("reports a start error and a timeout", async () => {
     const missing = await runFile(join(root, "nope", process.platform === "win32" ? "cloudpin.cmd" : "cloudpin"), [], {
       cwd: root,

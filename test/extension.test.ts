@@ -17,6 +17,7 @@ let checks: string[];
 let version: string;
 let found: string | null;
 let now: number;
+let platform: NodeJS.Platform;
 
 function start() {
   const checker = new Checker({
@@ -32,6 +33,7 @@ function start() {
     checker,
     hasPinFile: (f) => f === "/w/a",
     now: () => now,
+    platform,
   });
   return { api, context, item: recorded.items[0]! };
 }
@@ -44,6 +46,7 @@ beforeEach(() => {
   version = "1.3.0";
   found = "/usr/bin/cloudpin";
   now = 1_000_000;
+  platform = "linux";
   workspace.workspaceFolders = [folder("/w/a", 0), folder("/w/b", 1)];
 });
 
@@ -159,6 +162,21 @@ describe("the switch command", () => {
     expect(checks).toHaveLength(1);
     terminal.dispose();
     await vi.waitFor(() => expect(checks).toHaveLength(2));
+  });
+
+  it("on Windows gives the terminal NoDefaultCurrentDirectoryInExePath, and nothing extra elsewhere", async () => {
+    const { api } = start();
+    await vi.waitFor(() => expect(api.state()).toBe("match"));
+    await recorded.commands.get("cloudpin.switch")!();
+    expect(recorded.terminals[0]!.options.env).toBeUndefined();
+
+    reset();
+    workspace.workspaceFolders = [folder("/w/a", 0)];
+    platform = "win32";
+    const second = start();
+    await vi.waitFor(() => expect(second.api.state()).toBe("match"));
+    await recorded.commands.get("cloudpin.switch")!();
+    expect(recorded.terminals[0]!.options.env).toEqual({ NoDefaultCurrentDirectoryInExePath: "1" });
   });
 
   it("sends cloudpin check before cloudpin 1.3.0", async () => {

@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 import { Checker, TIMEOUT_MS } from "./checker";
 import { pickFolder } from "./folder";
 import { findCloudpin, isExecutableFile } from "./resolve";
-import { runFile } from "./run";
+import { childEnv, runFile } from "./run";
 import { RefreshScheduler } from "./scheduler";
 import { failedView, INSTALL_URL, type Kind, type View } from "./state";
 
@@ -24,6 +24,7 @@ export interface Host {
   checker: Checker;
   hasPinFile(folder: string): boolean;
   now(): number;
+  platform: NodeJS.Platform;
 }
 
 /** Local folders only: the extension declares `virtualWorkspaces: false`. */
@@ -44,6 +45,7 @@ export function activate(context: vscode.ExtensionContext): Api {
     }),
     hasPinFile: (folder) => existsSync(join(folder, PIN_FILE)),
     now: Date.now,
+    platform: process.platform,
   });
 }
 
@@ -140,7 +142,13 @@ export function activateWith(context: vscode.ExtensionContext, host: Host): Api 
         return;
       case "terminal": {
         // The user's own shell, so the shell-init `cloudpin` function can set AWS_PROFILE there.
-        const terminal = vscode.window.createTerminal({ name: TERMINAL_NAME, cwd: folder.uri, isTransient: true });
+        // On Windows the terminal (and what it starts) skips the current folder in command lookups.
+        const terminal = vscode.window.createTerminal({
+          name: TERMINAL_NAME,
+          cwd: folder.uri,
+          isTransient: true,
+          ...(host.platform === "win32" ? { env: childEnv({}, host.platform) } : {}),
+        });
         switchTerminals.add(terminal);
         terminal.show();
         terminal.sendText(action.command);

@@ -56,7 +56,9 @@ where VS Code starts, or pin the profile that is active by default.
 - **After upgrading cloudpin**, reload the window: the extension reads `cloudpin --version` once per window.
 - **Which cloudpin runs**: the extension looks cloudpin up on PATH itself and runs that file directly, without a
   shell. It skips relative PATH entries and any PATH entry inside an open workspace folder, so a `cloudpin` committed
-  to a repository is never what it runs.
+  to a repository is never what it runs. On Windows it also sets `NoDefaultCurrentDirectoryInExePath` for cloudpin
+  and for the switch terminal, so a command they start by name (npm's `cloudpin.cmd` runs `node`) is never taken from
+  the workspace folder either.
 - **What it shows you**: only cloudpin's own result. The hover repeats cloudpin's problem and fix texts as plain
   text, and cloudpin never puts a token or key in them. The extension sends nothing anywhere.
 
