@@ -63,7 +63,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:smoke": "npm run build && vscode-test",
+    "test:smoke": "npm run build && node scripts/smoke.mjs",
     "package": "vsce package",
     "vscode:prepublish": "npm run build"
   },
