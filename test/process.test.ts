@@ -9,7 +9,8 @@ import { findCloudpin, isExecutableFile } from "../src/resolve";
 import { runFile } from "../src/run";
 
 const root = mkdtempSync(join(tmpdir(), "cloudpin-vscode-"));
-afterAll(() => rmSync(root, { recursive: true, force: true }));
+// Retries: on Windows a just-killed child can hold the folder for a moment (EBUSY).
+afterAll(() => rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
 
 /** Writes a fake cloudpin into `dir` that answers --version and check --json. */
 function fakeCloudpin(dir: string, version: string, report: object): void {
@@ -88,7 +89,7 @@ describe("with a real process", () => {
     });
     expect(missing.code === null ? missing.startError : missing.code).toBeTruthy();
 
-    const slow = await runFile(process.execPath, ["-e", "setTimeout(() => {}, 10000)"], { cwd: root, env, timeoutMs: 200 });
+    const slow = await runFile(process.execPath, ["-e", "setTimeout(() => {}, 10000)"], { cwd: tmpdir(), env, timeoutMs: 200 });
     expect(slow.timedOut).toBe(true);
     expect(slow.code).toBeNull();
   });
