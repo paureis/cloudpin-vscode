@@ -1,0 +1,83 @@
+{
+  "name": "cloudpin",
+  "displayName": "cloudpin",
+  "description": "See in the status bar whether your cloud CLIs are on the accounts pinned in .cloudpin.yml.",
+  "version": "1.0.0",
+  "publisher": "paureis",
+  "author": "Alvaro Reis",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paureis/cloudpin-vscode.git"
+  },
+  "homepage": "https://github.com/paureis/cloudpin-vscode#readme",
+  "bugs": {
+    "url": "https://github.com/paureis/cloudpin-vscode/issues"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "cloudpin",
+    "cloud",
+    "azure",
+    "aws",
+    "gcloud",
+    "vercel",
+    "github",
+    "kubernetes",
+    "account",
+    "status bar"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/.cloudpin.yml"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In Restricted Mode cloudpin is not run, so the status bar item only asks you to trust the folder."
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "cloudpin.refresh",
+        "title": "Refresh",
+        "category": "cloudpin"
+      },
+      {
+        "command": "cloudpin.switch",
+        "title": "Switch to the pinned accounts",
+        "category": "cloudpin"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:smoke": "npm run build && node scripts/smoke.mjs",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run build"
+  },
+  "dependencies": {
+    "cross-spawn": "7.0.6"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "6.0.6",
+    "@types/node": "22.20.5",
+    "@types/vscode": "1.100.0",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.0.0",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

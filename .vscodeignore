@@ -1,0 +1,8 @@
+# Ship only what the extension needs: the bundle, the manifest, the icon and the docs.
+**
+!dist/extension.js
+!package.json
+!icon.png
+!README.md
+!CHANGELOG.md
+!LICENSE
