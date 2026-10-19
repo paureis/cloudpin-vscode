@@ -23,7 +23,10 @@ item has a `name` ("cloudpin") and `accessibilityInformation` that says the stat
 
 **Click** (owner, issue #18): opens a terminal named "cloudpin switch" (`window.createTerminal({ name, cwd: folder,
 isTransient: true })`) in the user's default shell and sends `cloudpin switch`, so the shell-init `cloudpin` function
-can set `AWS_PROFILE` in that shell. With cloudpin older than 1.3.0 it sends `cloudpin check` instead. When that
+can set `AWS_PROFILE` in that shell. With cloudpin older than 1.3.0 it sends `cloudpin check` instead. When the
+default shell (`env.shell`) is cmd.exe, which looks a bare name up in the current folder first and has no shell
+function, it sends the resolved absolute path in double quotes instead of the name. On Windows the terminal also gets
+`NoDefaultCurrentDirectoryInExePath=1`, as every process the extension starts does. When that
 terminal closes, the item refreshes. When cloudpin is missing, the click opens cloudpin's install instructions
 (README) in the browser.
 

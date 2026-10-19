@@ -38,7 +38,8 @@ the switch terminal closes, and on **cloudpin: Refresh**. There is no background
 ## Switching accounts
 
 Clicking the item (or **cloudpin: Switch to the pinned accounts**) opens a terminal named "cloudpin switch" in your
-default shell and runs `cloudpin switch` there. When that terminal closes, the item checks again. If cloudpin is
+default shell and runs `cloudpin switch` there (in cmd.exe, by cloudpin's full path, so cmd.exe can't pick up a
+`cloudpin` from the folder). When that terminal closes, the item checks again. If cloudpin is
 missing, the click opens its install instructions instead; in Restricted Mode it opens the workspace trust settings.
 
 **AWS profiles are per shell.** For AWS, `cloudpin switch` sets `AWS_PROFILE` through cloudpin's `shell-init`

@@ -117,9 +117,9 @@ describe("Checker.switchAction", () => {
   });
 
   it("sends switch from 1.3.0 and check before it", async () => {
-    expect(await new Checker(fake({ version: ok("1.3.0") }).deps).switchAction(ctx)).toEqual({ kind: "terminal", command: "cloudpin switch" });
-    expect(await new Checker(fake({ version: ok("1.2.4") }).deps).switchAction(ctx)).toEqual({ kind: "terminal", command: "cloudpin check" });
-    expect(await new Checker(fake({ version: ok("garbage") }).deps).switchAction(ctx)).toEqual({ kind: "terminal", command: "cloudpin check" });
+    expect(await new Checker(fake({ version: ok("1.3.0") }).deps).switchAction(ctx)).toEqual({ kind: "terminal", command: "cloudpin switch", path: "/usr/bin/cloudpin" });
+    expect(await new Checker(fake({ version: ok("1.2.4") }).deps).switchAction(ctx)).toEqual({ kind: "terminal", command: "cloudpin check", path: "/usr/bin/cloudpin" });
+    expect(await new Checker(fake({ version: ok("garbage") }).deps).switchAction(ctx)).toEqual({ kind: "terminal", command: "cloudpin check", path: "/usr/bin/cloudpin" });
   });
 });
 

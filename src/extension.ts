@@ -9,6 +9,7 @@ import { findCloudpin, isExecutableFile, realPath } from "./resolve";
 import { childEnv, runFile } from "./run";
 import { RefreshScheduler } from "./scheduler";
 import { failedView, INSTALL_URL, type Kind, type View } from "./state";
+import { terminalCommand } from "./terminal";
 
 const PIN_FILE = ".cloudpin.yml";
 const TERMINAL_NAME = "cloudpin switch";
@@ -158,7 +159,8 @@ export function activateWith(context: vscode.ExtensionContext, host: Host): Api 
         });
         switchTerminals.add(terminal);
         terminal.show();
-        terminal.sendText(action.command);
+        // cmd.exe gets the absolute path: it would look the bare name up in the folder first.
+        terminal.sendText(terminalCommand(action, vscode.env.shell));
       }
     }
   };

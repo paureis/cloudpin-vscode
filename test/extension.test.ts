@@ -4,7 +4,7 @@ import { Checker } from "../src/checker";
 import { activateWith } from "../src/extension";
 import type { RunResult } from "../src/run";
 import { INSTALL_URL } from "../src/state";
-import { events, folder, recorded, reset, Uri, workspace, window } from "./fake-vscode";
+import { env, events, folder, recorded, reset, Uri, workspace, window } from "./fake-vscode";
 
 const MATCH = JSON.stringify({
   result: "match",
@@ -203,6 +203,15 @@ describe("the switch command", () => {
     await vi.waitFor(() => expect(second.api.state()).toBe("match"));
     await recorded.commands.get("cloudpin.switch")!();
     expect(recorded.terminals[0]!.options.env).toEqual({ NoDefaultCurrentDirectoryInExePath: "1" });
+  });
+
+  it("sends the resolved path in quotes when the terminal's shell is cmd.exe", async () => {
+    env.shell = "C:\\Windows\\System32\\cmd.exe";
+    found = "C:\\Users\\dev\\AppData\\Roaming\\npm\\cloudpin.cmd";
+    const { api } = start();
+    await vi.waitFor(() => expect(api.state()).toBe("match"));
+    await recorded.commands.get("cloudpin.switch")!();
+    expect(recorded.terminals[0]!.sent).toEqual(['"C:\\Users\\dev\\AppData\\Roaming\\npm\\cloudpin.cmd" switch']);
   });
 
   it("sends cloudpin check before cloudpin 1.3.0", async () => {

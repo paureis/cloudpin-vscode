@@ -1,6 +1,7 @@
 import { parseCheckReport } from "./report";
 import type { RunResult } from "./run";
 import { failedView, missingView, outdatedView, restrictedView, type View, viewFromReport } from "./state";
+import type { TerminalAction } from "./terminal";
 import { canCheck, canSwitch, formatVersion, parseVersion, type Version } from "./version";
 
 /** Longest a cloudpin call may take before the item shows the failed state. */
@@ -22,7 +23,7 @@ export interface CheckContext {
 export type SwitchAction =
   | { kind: "trust" }
   | { kind: "install" }
-  | { kind: "terminal"; command: "cloudpin switch" | "cloudpin check" };
+  | ({ kind: "terminal" } & TerminalAction);
 
 type VersionAnswer = { version: Version } | { reason: string };
 
@@ -60,9 +61,9 @@ export class Checker {
     if (path === null) return { kind: "install" };
     const answer = await this.version(path, folder);
     // An unreadable version: run check in the terminal, where its output can be seen.
-    if ("reason" in answer) return { kind: "terminal", command: "cloudpin check" };
+    if ("reason" in answer) return { kind: "terminal", command: "cloudpin check", path };
     if (!canCheck(answer.version)) return { kind: "install" };
-    return { kind: "terminal", command: canSwitch(answer.version) ? "cloudpin switch" : "cloudpin check" };
+    return { kind: "terminal", command: canSwitch(answer.version) ? "cloudpin switch" : "cloudpin check", path };
   }
 
   private async version(path: string, cwd: string): Promise<VersionAnswer> {

@@ -173,6 +173,8 @@ export const commands = {
 };
 
 export const env = {
+  /** The default terminal shell. */
+  shell: "/bin/bash",
   async openExternal(uri: FakeUri): Promise<boolean> {
     recorded.opened.push(uri.toString());
     return true;
@@ -193,4 +195,5 @@ export function reset(): void {
   window.activeTextEditor = undefined;
   workspace.workspaceFolders = [];
   workspace.isTrusted = true;
+  env.shell = "/bin/bash";
 }
