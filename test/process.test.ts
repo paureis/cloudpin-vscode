@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { Checker, TIMEOUT_MS } from "../src/checker";
-import { findCloudpin, isExecutableFile } from "../src/resolve";
+import { findCloudpin, isExecutableFile, realPath } from "../src/resolve";
 import { runFile } from "../src/run";
 
 const root = mkdtempSync(join(tmpdir(), "cloudpin-vscode-"));
@@ -58,10 +58,10 @@ describe("with a real process", () => {
 
   it("resolves the cloudpin outside the workspace and reads its report", async () => {
     // Control: without the workspace folder, the planted copy is what PATH finds.
-    const naive = findCloudpin({ env, platform: process.platform, workspaceFolders: [], isFile: isExecutableFile });
+    const naive = findCloudpin({ env, platform: process.platform, workspaceFolders: [], isFile: isExecutableFile, realpath: realPath });
     expect(naive?.startsWith(planted)).toBe(true);
 
-    const path = findCloudpin({ env, platform: process.platform, workspaceFolders: [workspace], isFile: isExecutableFile });
+    const path = findCloudpin({ env, platform: process.platform, workspaceFolders: [workspace], isFile: isExecutableFile, realpath: realPath });
     expect(path?.startsWith(trusted)).toBe(true);
 
     const checker = new Checker({
@@ -73,7 +73,7 @@ describe("with a real process", () => {
   });
 
   it("passes arguments without a shell and runs in the given folder", async () => {
-    const path = findCloudpin({ env, platform: process.platform, workspaceFolders: [workspace], isFile: isExecutableFile })!;
+    const path = findCloudpin({ env, platform: process.platform, workspaceFolders: [workspace], isFile: isExecutableFile, realpath: realPath })!;
     const result = await runFile(path, ["check", "--json"], { cwd: workspace, env, timeoutMs: TIMEOUT_MS });
     expect(result.code).toBe(1);
     const out = JSON.parse(result.stdout) as { cwd: string; args: string[] };

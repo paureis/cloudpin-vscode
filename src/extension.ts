@@ -5,7 +5,7 @@ import { join } from "node:path";
 import * as vscode from "vscode";
 import { Checker, TIMEOUT_MS } from "./checker";
 import { pickFolder } from "./folder";
-import { findCloudpin, isExecutableFile } from "./resolve";
+import { findCloudpin, isExecutableFile, realPath } from "./resolve";
 import { childEnv, runFile } from "./run";
 import { RefreshScheduler } from "./scheduler";
 import { failedView, INSTALL_URL, type Kind, type View } from "./state";
@@ -40,6 +40,7 @@ export function activate(context: vscode.ExtensionContext): Api {
           platform: process.platform,
           workspaceFolders: fileFolders().map((folder) => folder.uri.fsPath),
           isFile: isExecutableFile,
+          realpath: realPath,
         }),
       run: (file, args, cwd) => runFile(file, args, { cwd, env: process.env, timeoutMs: TIMEOUT_MS }),
     }),

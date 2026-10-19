@@ -6,8 +6,34 @@ const files = (...paths: string[]) => {
   return (path: string) => set.has(path);
 };
 
+/** A file system with no links: every path is its own real path. */
+const same = (path: string) => path;
+
+/** A realpath that knows a few aliases and throws for nothing. */
+const aliases = (map: Record<string, string>) => (path: string) => map[path] ?? path;
+
+const throws = (): string => {
+  throw new Error("ENOENT");
+};
+
 describe("findCloudpin on POSIX", () => {
-  const base = { platform: "linux" as const, workspaceFolders: [] as string[] };
+  const base = { platform: "linux" as const, workspaceFolders: [] as string[], realpath: same };
+
+  it("skips an entry whose real path is inside a workspace folder (a symlink to the repository)", () => {
+    const env = { PATH: "/home/dev/shortcut/bin:/usr/local/bin" };
+    const isFile = files("/home/dev/shortcut/bin/cloudpin", "/usr/local/bin/cloudpin");
+    const realpath = aliases({ "/home/dev/shortcut/bin": "/home/dev/repo/bin" });
+    // Control: the alias spelling alone is not inside the folder.
+    expect(findCloudpin({ ...base, env, isFile, workspaceFolders: ["/home/dev/repo"] })).toBe("/home/dev/shortcut/bin/cloudpin");
+    expect(findCloudpin({ ...base, env, isFile, realpath, workspaceFolders: ["/home/dev/repo"] })).toBe("/usr/local/bin/cloudpin");
+  });
+
+  it("resolves the workspace folder too (a folder opened through a symlink)", () => {
+    const env = { PATH: "/data/repo/node_modules/.bin:/usr/local/bin" };
+    const isFile = files("/data/repo/node_modules/.bin/cloudpin", "/usr/local/bin/cloudpin");
+    const realpath = aliases({ "/home/dev/link": "/data/repo" });
+    expect(findCloudpin({ ...base, env, isFile, realpath, workspaceFolders: ["/home/dev/link"] })).toBe("/usr/local/bin/cloudpin");
+  });
 
   it("finds cloudpin on the first PATH entry that has it", () => {
     const found = findCloudpin({
@@ -56,7 +82,41 @@ describe("findCloudpin on POSIX", () => {
 });
 
 describe("findCloudpin on Windows", () => {
-  const base = { platform: "win32" as const, workspaceFolders: [] as string[] };
+  const base = { platform: "win32" as const, workspaceFolders: [] as string[], realpath: same };
+
+  it("drops \\\\?\\ and \\\\.\\ device-path entries, whatever their slashes", () => {
+    const env = { PATH: "\\\\?\\C:\\work\\repo\\bin;\\\\.\\C:\\work\\repo\\bin;//?/C:/x;C:\\npm", PATHEXT: ".CMD" };
+    const isFile = files(
+      "\\\\?\\C:\\work\\repo\\bin\\cloudpin.CMD",
+      "\\\\.\\C:\\work\\repo\\bin\\cloudpin.CMD",
+      "\\\\?\\C:\\x\\cloudpin.CMD",
+      "C:\\npm\\cloudpin.CMD",
+    );
+    expect(findCloudpin({ ...base, env, isFile, workspaceFolders: ["C:\\work\\repo"] })).toBe("C:\\npm\\cloudpin.CMD");
+    expect(findCloudpin({ ...base, env, isFile })).toBe("C:\\npm\\cloudpin.CMD");
+  });
+
+  it("skips an entry whose real path is inside a workspace folder (8.3 name, junction)", () => {
+    const env = { PATH: "C:\\WORK~1\\repo\\bin;C:\\npm", PATHEXT: ".CMD" };
+    const isFile = files("C:\\WORK~1\\repo\\bin\\cloudpin.CMD", "C:\\npm\\cloudpin.CMD");
+    const realpath = aliases({ "C:\\WORK~1\\repo\\bin": "C:\\work folder\\repo\\bin" });
+    // Control: the short spelling alone is not inside the folder.
+    expect(findCloudpin({ ...base, env, isFile, workspaceFolders: ["C:\\work folder\\repo"] })).toBe(
+      "C:\\WORK~1\\repo\\bin\\cloudpin.CMD",
+    );
+    expect(findCloudpin({ ...base, env, isFile, realpath, workspaceFolders: ["C:\\work folder\\repo"] })).toBe(
+      "C:\\npm\\cloudpin.CMD",
+    );
+  });
+
+  it("falls back to comparing the spellings when realpath throws", () => {
+    const env = { PATH: "c:\\work\\REPO\\bin;C:\\npm", PATHEXT: ".CMD" };
+    const isFile = files("c:\\work\\REPO\\bin\\cloudpin.CMD", "C:\\npm\\cloudpin.CMD");
+    expect(findCloudpin({ ...base, env, isFile, realpath: throws, workspaceFolders: ["C:\\Work\\repo"] })).toBe(
+      "C:\\npm\\cloudpin.CMD",
+    );
+    expect(findCloudpin({ ...base, env, isFile, realpath: throws })).toBe("c:\\work\\REPO\\bin\\cloudpin.CMD");
+  });
 
   it("tries each PATHEXT extension and reads Path and PathExt in any case", () => {
     const found = findCloudpin({
