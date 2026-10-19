@@ -54,7 +54,8 @@ Commands: `cloudpin.refresh` ("cloudpin: Refresh"), `cloudpin.switch` ("cloudpin
 ## When it refreshes (owner)
 
 On activation; when `.cloudpin.yml` in an open folder is created, changed or deleted (`workspace.createFileSystemWatcher`
-per folder); when the window regains focus (`window.onDidChangeWindowState`, at most once every 30 s); when the
+per folder); when the git branch changes (`.git/HEAD` in a folder is created or changed, since a `branches:` mapping
+picks the environment from the branch); when the window regains focus (`window.onDidChangeWindowState`, at most once every 30 s); when the
 active editor moves to another workspace folder; when workspace folders change; after the switch terminal closes
 (`window.onDidCloseTerminal`); and on `cloudpin.refresh`. No background timer. One check at a time: a refresh asked
 for while one runs is run once after it (coalesced).

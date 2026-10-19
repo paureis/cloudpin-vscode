@@ -12,6 +12,7 @@ import { failedView, INSTALL_URL, type Kind, type View } from "./state";
 import { terminalCommand } from "./terminal";
 
 const PIN_FILE = ".cloudpin.yml";
+const GIT_HEAD = ".git/HEAD";
 const TERMINAL_NAME = "cloudpin switch";
 
 /** What `activate` returns: read-only, for the smoke test. */
@@ -118,12 +119,17 @@ export function activateWith(context: vscode.ExtensionContext, host: Host): Api 
   let watchers: vscode.FileSystemWatcher[] = [];
   const watch = () => {
     for (const watcher of watchers) watcher.dispose();
-    watchers = fileFolders().map((folder) => {
-      const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, PIN_FILE));
-      watcher.onDidCreate(refresh);
-      watcher.onDidChange(refresh);
-      watcher.onDidDelete(refresh);
-      return watcher;
+    watchers = fileFolders().flatMap((folder) => {
+      const pin = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, PIN_FILE));
+      pin.onDidCreate(refresh);
+      pin.onDidChange(refresh);
+      pin.onDidDelete(refresh);
+      // A pin file's `branches:` mapping picks the environment from the git branch,
+      // so a checkout can change the answer. Refreshes are coalesced by the scheduler.
+      const head = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, GIT_HEAD));
+      head.onDidCreate(refresh);
+      head.onDidChange(refresh);
+      return [pin, head];
     });
   };
   context.subscriptions.push({ dispose: () => watchers.forEach((watcher) => watcher.dispose()) });

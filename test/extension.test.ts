@@ -71,12 +71,14 @@ describe("activation", () => {
     expect(checks).toEqual(["/w/a"]);
   });
 
-  it("registers both commands and one pin-file watcher per folder", () => {
+  it("registers both commands and a pin-file and a git HEAD watcher per folder", () => {
     start();
     expect([...recorded.commands.keys()].sort()).toEqual(["cloudpin.refresh", "cloudpin.switch"]);
     expect(recorded.watchers.map((w) => [w.pattern.base.uri.fsPath, w.pattern.pattern])).toEqual([
       ["/w/a", ".cloudpin.yml"],
+      ["/w/a", ".git/HEAD"],
       ["/w/b", ".cloudpin.yml"],
+      ["/w/b", ".git/HEAD"],
     ]);
   });
 });
@@ -126,7 +128,24 @@ describe("refreshes", () => {
     workspace.workspaceFolders = [folder("/w/a", 0)];
     events.folders.fire({});
     await vi.waitFor(() => expect(checks).toHaveLength(2));
-    expect(recorded.watchers.filter((w) => !w.disposed)).toHaveLength(1);
+    expect(recorded.watchers.filter((w) => !w.disposed)).toHaveLength(2);
+  });
+
+  it("when the git branch changes (branches: picks the environment), coalesced", async () => {
+    const { api } = start();
+    await vi.waitFor(() => expect(api.state()).toBe("match"));
+    const head = recorded.watchers.find((w) => w.pattern.base.uri.fsPath === "/w/a" && w.pattern.pattern === ".git/HEAD")!;
+    head.change.fire(Uri.file("/w/a/.git/HEAD"));
+    await vi.waitFor(() => expect(checks).toHaveLength(2));
+    head.create.fire(Uri.file("/w/a/.git/HEAD"));
+    await vi.waitFor(() => expect(checks).toHaveLength(3));
+    // A checkout writes HEAD more than once: one check runs, one more after it, not one per write.
+    head.change.fire(Uri.file("/w/a/.git/HEAD"));
+    head.change.fire(Uri.file("/w/a/.git/HEAD"));
+    head.change.fire(Uri.file("/w/a/.git/HEAD"));
+    await vi.waitFor(() => expect(checks).toHaveLength(5));
+    await settle();
+    expect(checks).toHaveLength(5);
   });
 
   it("drops a check that finishes after the focus moved to another folder", async () => {

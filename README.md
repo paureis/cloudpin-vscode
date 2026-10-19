@@ -31,8 +31,8 @@ global folder is usually on its PATH. If the item says cloudpin isn't found, sta
 | Restricted Mode | grey `$(shield) cloudpin` | "trust this folder to check its accounts" |
 
 The item runs `cloudpin check --json` in the workspace folder you're working in: the folder of the active editor, or
-else the first folder with a `.cloudpin.yml`. It checks again when the pin file changes, when you come back to the
-window (at most every 30 seconds), when you move to a file in another folder, when folders are added or removed, after
+else the first folder with a `.cloudpin.yml`. It checks again when the pin file changes, when you switch git branches
+(a pin file's `branches:` can pick the environment from the branch), when you come back to the window (at most every 30 seconds), when you move to a file in another folder, when folders are added or removed, after
 the switch terminal closes, and on **cloudpin: Refresh**. There is no background timer.
 
 ## Switching accounts
