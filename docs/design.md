@@ -13,6 +13,7 @@ A status bar item showing whether the cloud CLIs are on the accounts pinned in t
 | `match` | `$(pinned) cloudpin` (or `$(pinned) <environment>`), foreground `testing.iconPassed` (green) | each pinned cloud and "matches" |
 | `mismatch` (any pinned cloud `mismatch`, `not-logged-in` or `unknown`) | `$(pinned-dirty) cloudpin`, background `statusBarItem.errorBackground` (red) | each cloud's problems and fix, from `check --json` |
 | `error` (the pin file is invalid) | `$(warning) cloudpin`, background `statusBarItem.warningBackground` | the error text |
+| a pinned cloud is `unsupported` by this cloudpin (and none is red) | `$(warning) cloudpin`, background `statusBarItem.warningBackground` | each cloud's line and "upgrade cloudpin"; the click opens the install instructions |
 | `unpinned` in the folder in focus | `$(pin) cloudpin`, foreground `disabledForeground` (grey) | "no .cloudpin.yml in this folder" |
 | cloudpin not found, older than 1.2.0, or failed to run | grey `$(circle-slash) cloudpin` | how to install or upgrade, and the reason |
 | Restricted Mode | grey `$(shield) cloudpin` | "trust this folder to check its accounts" |

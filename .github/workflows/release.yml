@@ -100,6 +100,9 @@ jobs:
   # Present from the start, but it runs only once the owner sets PUBLISH_MARKETPLACE
   # and/or PUBLISH_OPENVSX to "true" (Settings > Secrets and variables > Actions >
   # Variables), after creating the publisher accounts (docs/design.md, "CI and release").
+  # The environment "marketplace" must exist, with the owner as required reviewer and
+  # deployments limited to v* tags, BEFORE either variable is set: a job that names an
+  # environment that doesn't exist gets a new one created with no protection rules.
   publish:
     needs: github-release
     if: vars.PUBLISH_MARKETPLACE == 'true' || vars.PUBLISH_OPENVSX == 'true'

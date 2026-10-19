@@ -33,7 +33,12 @@ const YELLOW_BG = "statusBarItem.warningBackground";
 const MIN = formatVersion(CHECK_VERSION);
 const INSTALL_LINK = `[cloudpin's install instructions](${INSTALL_URL})`;
 
-/** cloudpin's own rule for environment names; anything else is not put in the item's text. */
+/**
+ * cloudpin's rule for environment names (a letter or digit, then letters, digits,
+ * "_", "." or "-"; src/config.ts in cloudpin), plus a 32-character limit that is
+ * this extension's own, to keep the status bar short. A name outside it is not
+ * put in the item's text.
+ */
 const ENV_NAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$/;
 
 const paragraphs = (...parts: (string | undefined | false)[]) => parts.filter(Boolean).join("\n\n");

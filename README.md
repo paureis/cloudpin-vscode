@@ -26,6 +26,7 @@ global folder is usually on its PATH. If the item says cloudpin isn't found, sta
 | every pinned cloud matches | green `$(pinned) cloudpin`, or the environment's name | each pinned cloud and "matches" |
 | a pinned cloud is on another account, not logged in, or can't be read | red `$(pinned-dirty) cloudpin` | each cloud's problem and the fix, from cloudpin |
 | the pin file is invalid | yellow `$(warning) cloudpin` | the error |
+| a pinned cloud isn't supported by this cloudpin | yellow `$(warning) cloudpin` | which cloud, and how to upgrade (the click opens the install instructions) |
 | no `.cloudpin.yml` in the folder | grey `$(pin) cloudpin` | "no .cloudpin.yml in this folder" |
 | cloudpin not found, older than 1.2.0, or it failed to run | grey `$(circle-slash) cloudpin` | how to install or upgrade, and why |
 | Restricted Mode | grey `$(shield) cloudpin` | "trust this folder to check its accounts" |
